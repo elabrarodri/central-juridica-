@@ -28,7 +28,7 @@ jobs:
 
       - name: Extrair publicações
         env:
-          FAZ_EMAIL: ${{ secrets.FAZ_EMAIL }}
+          FAZ_CPF: ${{ secrets.FAZ_EMAIL }}
           FAZ_SENHA: ${{ secrets.FAZ_SENHA }}
         run: node scripts/sync-publicacoes.mjs
 
