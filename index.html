@@ -28,7 +28,54 @@
     .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   </style>
 </head>
-<body>
+<script>
+(function () {
+  'use strict';
+  const STORAGE_KEY = 'faz_sync_bridge';
+  const CHECKED_KEY = 'faz_sync_last_check';
+
+  window.__fazSync = function (pubsJSON) {
+    try {
+      const pubs = typeof pubsJSON === 'string' ? JSON.parse(pubsJSON) : pubsJSON;
+      if (!Array.isArray(pubs)) return;
+      importarPubs(pubs);
+    } catch (e) { console.error('[FAZ Bridge] Erro:', e); }
+  };
+
+  function verificarBridge() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const lastCheck = localStorage.getItem(CHECKED_KEY) || '0';
+      const payload = JSON.parse(raw);
+      if (!payload.timestamp || payload.timestamp <= parseInt(lastCheck)) return;
+      localStorage.setItem(CHECKED_KEY, String(payload.timestamp));
+      if (Array.isArray(payload.pubs) && payload.pubs.length > 0) importarPubs(payload.pubs);
+    } catch (e) {}
+  }
+
+  function importarPubs(pubs) {
+    try {
+      const stored = JSON.parse(localStorage.getItem('ebr_pubs') || '[]');
+      const ids = new Set(stored.map(p => p.id));
+      const novas = pubs.filter(p => p.id && !ids.has(p.id));
+      if (novas.length === 0) return;
+      localStorage.setItem('ebr_pubs', JSON.stringify([...novas, ...stored]));
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;background:#1e293b;border:1px solid #22c55e;color:#22c55e;padding:12px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:13px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.4)';
+      d.textContent = '⚖️ ' + novas.length + ' publicação(ões) do FAZ importada(s)!';
+      document.body.appendChild(d);
+      setTimeout(() => d.remove(), 6000);
+      setTimeout(() => { if (confirm(novas.length + ' publicação(ões) do FAZ importadas. Recarregar para ver?')) location.reload(); }, 700);
+    } catch (e) {}
+  }
+
+  setInterval(verificarBridge, 5000);
+  verificarBridge();
+  console.log('[FAZ Bridge] Ativo.');
+})();
+</script>
+</body><body>
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useMemo, useCallback, useRef } = React;
