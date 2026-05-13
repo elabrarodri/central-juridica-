@@ -4072,6 +4072,53 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+  // ========== INTEGRAÇÃO GOOGLE SHEETS ==========
+  // Função para salvar cliente no Google Sheets quando disponível
+  window.salvarClienteNoGoogleSheets = function(cliente) {
+      // Verificar se google.script.run está disponível (rodando dentro do Google Apps Script)
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                                                      // Preparar objeto do cliente com os campos esperados pelo Código.gs
+                  const clienteData = {
+                          nome: cliente.nome || '',
+                          email: cliente.email || '',
+                          telefone: cliente.telefone || '',
+                          cnpj_cpf: cliente.cnpj_cpf || cliente.cpf || '',
+                          endereco: cliente.endereco || '',
+                          status: cliente.status || 'Ativo'
+                  };
+
+                  // Chamar função do Google Apps Script para salvar
+                  google.script.run
+                    .withSuccessHandler(function(result) {
+                              console.log('✅ Cliente salvo no Google Sheets:', result);
+                              // Mostrar notificação ao usuário
+                              if (window.showNotification) {
+                                          window.showNotification('Cliente salvo com sucesso no Google Sheets', 'success');
+                              }
+                    })
+                    .withFailureHandler(function(error) {
+                              console.error('❌ Erro ao salvar no Google Sheets:', error);
+                              // Mostrar notificação de erro
+                              if (window.showNotification) {
+                                          window.showNotification('Erro ao salvar no Google Sheets: ' + error, 'error');
+                              }
+                    })
+                    .salvarCliente(clienteData);
+            } else {
+                  // Se não estiver dentro do Google Apps Script, salvar apenas localmente
+                  console.log('ℹ️ Google Apps Script não disponível. Salvando localmente.');
+                  localStorage.setItem('cliente_' + (cliente.id || Date.now()), JSON.stringify(cliente));
+            }
+  };
+
+  // Interceptar o comando global para salvar (se houver)
+  window.addEventListener('salvarCliente', function(event) {
+      if (event.detail && event.detail.cliente) {
+            window.salvarClienteNoGoogleSheets(event.detail.cliente);
+      }
+  });
+  // ================================================
 </script>
 </body>
 </html>
